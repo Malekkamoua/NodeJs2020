@@ -26,11 +26,12 @@ const User = mongoose.model(
             type: String,
             required: false,
             min: 6,
-            max: 1024,
+            max: 3000,
         },
         cv: {
             type: String,
             required: false,
+            default: "none",
             min: 6,
             max: 1024,
         },

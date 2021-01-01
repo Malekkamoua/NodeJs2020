@@ -1,8 +1,11 @@
-const router = require("express").Router();
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
+const router = require("express").Router()
+const jwt = require("jsonwebtoken")
+const bcrypt = require("bcryptjs")
+const multer = require('multer')
+const path = require('path');
+const verifyToken = require("./validate-token");
 
-const User = require("../models/User");
+const User = require("../models/User")
 
 // validation
 const { registerValidation, loginValidation } = require("./validation");
@@ -28,6 +31,7 @@ router.post("/register", async (req, res) => {
   const user = new User({
     name: req.body.name,
     email: req.body.email,
+    motivation_letter: req.body.motivation_letter,
     password,
   });
 
@@ -73,6 +77,46 @@ router.post("/login", async (req, res) => {
       token,
     },
   });
+});
+
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads');
+    },
+    filename: (req, file, cb) => {
+        console.log(file);
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype == 'application/pdf') {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+}
+const upload = multer({ storage: storage, fileFilter: fileFilter });
+
+//Upload route
+router.post('/upload',verifyToken, upload.single('cv'), async(req, res, next) => {
+
+    let token = req.header('auth-token');
+    const decoded = jwt.verify(token, process.env.TOKEN_SECRET );  
+  
+    console.log(decoded.id)
+    
+    User.findOneAndUpdate({ "_id": decoded.id },{ "$set": {"cv": req.file.path}},
+      function(err,updatedObject) {
+        if (err) {
+          console.log(err)
+          return res.status(500).send(err)
+
+        }else{
+          console.log(updatedObject)
+          return res.status(200).send(updatedObject)
+        }
+      });
 });
 
 module.exports = router;

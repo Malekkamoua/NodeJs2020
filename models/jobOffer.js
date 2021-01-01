@@ -52,6 +52,11 @@ const JobOffer = mongoose.model(
             min: 6,
             max: 1024,
         },
+        status: {
+            type: String,
+            required: true,
+            default:"unchanged"
+        },
         date: {
             type: Date,
             default: Date.now,
