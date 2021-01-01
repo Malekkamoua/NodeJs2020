@@ -5,9 +5,9 @@ const express = require("express")
 const app = express()
 const mongoose = require("mongoose")
 
-const authRoutes = require("./authentication/auth");
-const startTracking = require('./link_scrapper');
-const jobScraper =  require('./job_scrapper')
+const authRoutes = require("./authentication/auth")
+const startTracking = require('./scrapping/link_scrapper')
+const jobScraper =  require('./scrapping/job_scrapper')
 
 //connecting database
 mongoose.connect( process.env.DB_URL,{ useNewUrlParser : true, useUnifiedTopology: true})

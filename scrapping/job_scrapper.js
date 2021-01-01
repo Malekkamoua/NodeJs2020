@@ -3,8 +3,8 @@ const pluginStealth = require('puppeteer-extra-plugin-stealth');
 const $ = require('cheerio');
 const CronJob = require('cron').CronJob;
 const sendNotification = require('./notification');
-const Link = require('./models/Link');
-const JobOffer = require('./models/JobOffer');
+const Link = require('../models/Link');
+const JobOffer = require('../models/JobOffer');
 
 puppeteerExtra.use(pluginStealth());
 

@@ -1,7 +1,7 @@
 const puppeteerExtra = require('puppeteer-extra');
 const pluginStealth = require('puppeteer-extra-plugin-stealth');
 const $ = require('cheerio');
-const Link = require('./models/Link')
+const Link = require('../models/Link')
 
 const url = 'https://www.talents.tn/listing?location=Tout+Tunisia&latitude=&longitude=&placetype=country&placeid=TN&keywords=web&cat=&subcat=&page=1';
 
