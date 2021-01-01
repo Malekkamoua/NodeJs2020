@@ -1,11 +1,7 @@
-
-
 const puppeteerExtra = require('puppeteer-extra');
 const pluginStealth = require('puppeteer-extra-plugin-stealth');
 const $ = require('cheerio');
-const CronJob = require('cron').CronJob;
 const link = require('./models/link')
-const sendNotification = require('./notification');
 
 const url = 'https://www.talents.tn/listing?location=Tout+Tunisia&latitude=&longitude=&placetype=country&placeid=TN&keywords=web&cat=&subcat=&page=1';
 
@@ -22,6 +18,7 @@ async function configureBrowser() {
 }
 
 async function getAllLinks(page) {
+    return new Promise(async(resolve) => {
 
     await page.reload();
     let html = await page.evaluate(() => document.body.innerHTML);
@@ -32,25 +29,14 @@ async function getAllLinks(page) {
         document.save(function (err) {
             if (err) {
                 console.log("erreur "+ err)
-            };
+            }else{
             console.log("Un nouveau lien est ajouté")
+            resolve(document)
+            }
         });
     });
-    console.log("Links scrapping ---- done")
-    return
+});
 }
-
-// async function startTracking() {
-
-//     const page = await configureBrowser();
-  
-//     let job = new CronJob('* */5 * * * *', function() { //runs every 30 minutes in this config
-//         console.log("get links")
-//         getAllLinks(page);
-//     }, null, true, null, null, true);
-//     job.start();
-
-// }
 
 async function startTracking() {
     try {
