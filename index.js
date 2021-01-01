@@ -1,21 +1,31 @@
+const dotenv = require("dotenv");
+dotenv.config();
+
 const express = require("express")
 const app = express()
 const mongoose = require("mongoose")
 
+const authRoutes = require("./authentication/auth");
 const startTracking = require('./link_scrapper');
 const jobScraper =  require('./job_scrapper')
 
 //connecting database
-mongoose.connect("mongodb+srv://Malekkamoua:NodeJsProject@nodejsproject.d97so.mongodb.net/<dbname>?retryWrites=true&w=majority",{ useNewUrlParser : true, useUnifiedTopology: true})
+mongoose.connect( process.env.DB_URL,{ useNewUrlParser : true, useUnifiedTopology: true})
 
 //Activating
 const db = mongoose.connection
 db.on('error', (error) => console.error(error))
 db.once('open',()=> console.log('Connected to database ------'))
 
+// middlewares
+app.use(express.json()); 
+
+// Authentication
+app.use("/user", authRoutes);
+
 app.get('/', (req, res) => res.send('Hello World ! '));
 
-
+//Scraping modules
 new Promise((resolve, reject) => {
     startTracking();
     resolve();
@@ -27,6 +37,5 @@ new Promise((resolve, reject) => {
     console.log("Error ----- "+ err)
 });
 
-const port = 3000;
-const server = app.listen(process.env.PORT || port, () => console.log(`Example app listening at http://localhost:${port}`));
+const server = app.listen(process.env.PORT, () => console.log(`App listening at http://localhost:${process.env.PORT}`));
 server.timeout = 100000;

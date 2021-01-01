@@ -3,15 +3,15 @@ const pluginStealth = require('puppeteer-extra-plugin-stealth');
 const $ = require('cheerio');
 const CronJob = require('cron').CronJob;
 const sendNotification = require('./notification');
-const Link = require('./models/link');
-const JobOffer = require('./models/jobOffer');
+const Link = require('./models/Link');
+const JobOffer = require('./models/JobOffer');
 
 puppeteerExtra.use(pluginStealth());
 
-function doSomethingAsync(value) {
+function doSomethingAsync(link, image) {
     return new Promise((resolve) => {
 
-        console.log("Value ---------- "+ value);
+        console.log("link ---------- "+ link);
 
         let job_description;
         let job_title
@@ -31,7 +31,7 @@ function doSomethingAsync(value) {
                 })
                 .then(function (page) {
 
-                    return page.goto(value, {waitUntil: 'load', timeout: 0}).then(function () {
+                    return page.goto(link, {waitUntil: 'load', timeout: 0}).then(function () {
                         return page.content();
                     });
 
@@ -77,8 +77,9 @@ function doSomethingAsync(value) {
                         });
 
                         const document = new JobOffer({
-                            job_link: value,
+                            job_link: link,
                             title: job_title,
+                            image: image,
                             description: job_description,
                             entreprise_email: job_email,
                             salaire: job_salary,
@@ -91,7 +92,7 @@ function doSomethingAsync(value) {
                                 console.log("erreur " + err)
                             } else {
                                 console.log("Potential job offer saved")
-                                sendNotification(value, job_title)
+                                sendNotification(link, job_title)
                                 console.log("Resolving " + document);
                             resolve(document);
                             }
@@ -108,7 +109,9 @@ function doSomethingAsync(value) {
 async function jobScraper() {
 
     const promises = [];
-    let links_array = [];
+    let job_links_array = [];
+    let job_pics_array = [];
+
     const allObjects = await Link.find({})
     
     if (allObjects.length == 0) {
@@ -116,7 +119,9 @@ async function jobScraper() {
     }
 
     allObjects.forEach(linkDoc => {
-        links_array.push(linkDoc.title)
+
+        job_links_array.push(linkDoc.title)
+        job_pics_array.push(linkDoc.image)
 
         Link.findOneAndDelete({"_id": linkDoc.id}, function (error, docs) { 
             if (error){ 
@@ -129,11 +134,11 @@ async function jobScraper() {
         }); 
     });
     
-    console.log(links_array)
+    console.log(job_links_array)
 
-    if (links_array.length != 0) {
-        for (let i = 0; i < links_array.length; ++i) {
-            promises.push(doSomethingAsync(links_array[i]));
+    if (job_links_array.length != 0) {
+        for (let i = 0; i < job_links_array.length; ++i) {
+            promises.push(doSomethingAsync(job_links_array[i], job_pics_array[i]));
         }
 
         Promise.all(promises)

@@ -24,13 +24,13 @@ const User = mongoose.model(
         },
         motivation_letter: {
             type: String,
-            required: true,
+            required: false,
             min: 6,
             max: 1024,
         },
         cv: {
             type: String,
-            required: true,
+            required: false,
             min: 6,
             max: 1024,
         },
