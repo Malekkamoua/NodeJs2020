@@ -9,17 +9,6 @@ puppeteerExtra.use(pluginStealth());
 function scrape(link, keywords, user_id) {
     return new Promise((resolve) => {
 
-        Link.findOneAndDelete({
-            "_id": link.id
-        }, function (error, docs) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log(" --link-- from Link Collection is deleted ")
-                console.log(docs);
-            }
-        });
-
         setTimeout(() => {
             puppeteerExtra
                 .launch({
@@ -31,10 +20,7 @@ function scrape(link, keywords, user_id) {
                 })
                 .then(function (page) {
 
-                    return page.goto(link.title, {
-                        waitUntil: 'load',
-                        timeout: 0
-                    }).then(function () {
+                    return page.goto(link, {waitUntil: 'load', timeout: 0}).then(function () {
                         return page.content();
                     });
 
@@ -44,14 +30,14 @@ function scrape(link, keywords, user_id) {
 
                         let result = $(this).attr('href');
                         let image_src = $(this).parent().parent().prev().find("img").attr('src');
-
+            
                         const document = new Link({
                             title: result,
-                            image: image_src,
-                            keywords: keywords,
+                            image : image_src,
+                            keywords : keywords,
                             user_id: user_id
                         });
-
+            
                         document.save(function (err) {
                             if (err) {
                                 console.log("erreur " + err)
@@ -60,7 +46,7 @@ function scrape(link, keywords, user_id) {
                                 resolve(document)
                             }
                         });
-
+                        
                     });
                 })
         });
@@ -76,47 +62,42 @@ async function linkScraper() {
     let users_id = []
 
     const allObjects = await primarySearchLink.find({})
-
+    
     if (allObjects.length == 0) {
-        console.log("primarySearch Collection is empty")
-        return
+        return 
     }
 
     allObjects.forEach(linkDoc => {
 
-        job_links_array.push({
-            "id": linkDoc.id,
-            "title":linkDoc.link
-        })
+        job_links_array.push(linkDoc.link)
         job_keyword_array.push(linkDoc.keywords)
         users_id.push(linkDoc.user_id)
 
-        primarySearchLink.findOneAndDelete({
-            "_id": linkDoc.id
-        }, function (error, docs) {
-            if (error) {
+        Link.findOneAndDelete({"_id": linkDoc.id}, function (error, docs) { 
+            if (error){ 
                 console.log(error);
-            } else {
-                console.log(" --link-- from primaryResearch Collection is deleted ")
+            } 
+            else{
+                console.log("deleted object") 
                 console.log(docs);
-            }
-        });
+            } 
+        }); 
     });
-
+    
     console.log(job_keyword_array)
 
     if (job_links_array.length != 0) {
         for (let i = 0; i < job_links_array.length; ++i) {
-            promises.push(scrape(job_links_array[i], job_keyword_array[i], users_id[i]));
+            promises.push(scrape(job_links_array[i], job_keyword_array[i],users_id[i]));
         }
 
         Promise.all(promises)
-            .then((results) => {
-                console.log("All done", results);
-            })
-            .catch((error) => {
-                console.log(error)
-            });
+        .then((results) => {
+            console.log("All done", results);
+        })
+        .catch((error) => {
+            console.log(error)
+        });
     }
 }
 

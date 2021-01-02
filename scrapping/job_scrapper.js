@@ -8,7 +8,7 @@ const JobOffer = require('../models/JobOffer');
 
 puppeteerExtra.use(pluginStealth());
 
-function doSomethingAsync(link, image) {
+function scrape(link, image) {
     return new Promise((resolve) => {
 
         console.log("link ---------- "+ link);
@@ -115,6 +115,7 @@ async function jobScraper() {
     const allObjects = await Link.find({})
     
     if (allObjects.length == 0) {
+        console.log("Link Collection is empty")
         return 
     }
 
@@ -138,15 +139,15 @@ async function jobScraper() {
 
     if (job_links_array.length != 0) {
         for (let i = 0; i < job_links_array.length; ++i) {
-            promises.push(doSomethingAsync(job_links_array[i], job_pics_array[i]));
+            promises.push(scrape(job_links_array[i], job_pics_array[i]));
         }
 
         Promise.all(promises)
         .then((results) => {
             console.log("All done", results);
         })
-        .catch((e) => {
-            // Handle errors here
+        .catch((error) => {
+            console.log(error)
         });
     }
 }
