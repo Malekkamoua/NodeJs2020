@@ -4,7 +4,8 @@ const multer = require('multer')
 const path = require('path');
 
 const User = require("../models/User")
-const primaryResearch = require("../models/PrimaryResearch")
+const primaryResearch = require("../models/PrimaryResearch");
+const JobOffer = require("../models/JobOffer");
 
 //Uploading cv
 const storage = multer.diskStorage({
@@ -61,13 +62,18 @@ router.post('/search', (req, res) => {
 
     let req_words = req.body.link.split(" ");
     let req_keywords = req.body.keywords.split(" ");
+    let pages = parseInt(req.body.pages) + 1;
 
     let words_concat = req_words.join("+")
 
-    let link = `https://www.talents.tn/listing?location=Tout+Tunisia&latitude=&longitude=&placetype=country&placeid=TN&keywords=${words_concat}&cat=&subcat=&page=1`
+    let links_array = []
+
+    for (let i = 1; i < pages; i++) {
+        links_array.push(`https://www.talents.tn/listing?location=Tout+Tunisia&latitude=&longitude=&placetype=country&placeid=TN&keywords=${words_concat}&cat=&subcat=&page=${i}`)
+    }
 
     const document = new primaryResearch({
-        "link": link,
+        "links": links_array,
         "keywords": req_keywords,
         "user_id": payload.id
     });
@@ -79,6 +85,22 @@ router.post('/search', (req, res) => {
         console.log("Success")
     });
     res.send(`document added to collection`)
+});
+
+//Getting all user potential jobs
+router.get('/jobs', async (req, res) => {
+
+    let token = req.header('auth-token');
+    const payload = jwt.verify(token, process.env.TOKEN_SECRET);
+
+    try {
+        const allObjects = await JobOffer.find({user: payload.id})
+        res.json(allObjects);
+
+    } catch (error) {
+        res.status(500).json({message : error.message});
+    }
+
 });
 
 module.exports = router

@@ -57,6 +57,10 @@ const JobOffer = mongoose.model(
             required: true,
             default:"unchanged"
         },
+        user_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        },
         date: {
             type: Date,
             default: Date.now,

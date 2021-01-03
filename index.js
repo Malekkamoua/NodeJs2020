@@ -32,17 +32,22 @@ app.use("/user",verifyToken,userRoutes);
 
 app.get('/', (req, res) => res.send('Hello World ! '));
 
+
+startTracking();
 //Scraping modules
-new Promise((resolve, reject) => {
-    startTracking();
-    resolve();
-})
-.then(() => {
-    jobScraper();
-})
-.catch((err) => {
-    console.log("Error ----- "+ err)
-});
+// new Promise((resolve, reject) => {
+//     startTracking();
+//     resolve();
+// })
+// .then(() => {
+//     jobScraper();
+// })
+// .then(() => {
+//     sendNotification();
+// })
+// .catch((err) => {
+//     console.log("Error ----- "+ err)
+// });
 
 const server = app.listen(process.env.PORT, () => console.log(`App listening at http://localhost:${process.env.PORT}`));
 server.timeout = 100000;

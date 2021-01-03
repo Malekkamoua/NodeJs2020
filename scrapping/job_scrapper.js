@@ -2,16 +2,17 @@ const puppeteerExtra = require('puppeteer-extra');
 const pluginStealth = require('puppeteer-extra-plugin-stealth');
 const $ = require('cheerio');
 const CronJob = require('cron').CronJob;
-const sendNotification = require('./notification');
 const Link = require('../models/Link');
 const JobOffer = require('../models/JobOffer');
+const Notification = require('../models/Notification')
 
 puppeteerExtra.use(pluginStealth());
 
-function scrape(link, image) {
+function scrape(link, image, user_id) {
+
     return new Promise((resolve) => {
 
-        console.log("link ---------- "+ link);
+        console.log("link ---------- " + link);
 
         let job_description;
         let job_title
@@ -31,7 +32,10 @@ function scrape(link, image) {
                 })
                 .then(function (page) {
 
-                    return page.goto(link, {waitUntil: 'load', timeout: 0}).then(function () {
+                    return page.goto(link, {
+                        waitUntil: 'load',
+                        timeout: 0
+                    }).then(function () {
                         return page.content();
                     });
 
@@ -46,13 +50,13 @@ function scrape(link, image) {
                         let foundEmails = [];
                         let emailRegex = /(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)[a-zA-Z]{2,}))/;
 
-                        while (match = emailRegex.exec(job_description)){
+                        while (match = emailRegex.exec(job_description)) {
                             //-- store in array the found match email
                             foundEmails.push(match[0]);
                             //-- remove the found email and continue search if there are still emails
-                            job_description = job_description.replace(match[0],"")
+                            job_description = job_description.replace(match[0], "")
                         }
-            
+
                         job_email = foundEmails[0]
                         console.log(job_email)
 
@@ -84,17 +88,30 @@ function scrape(link, image) {
                             entreprise_email: job_email,
                             salaire: job_salary,
                             emplacement: job_location,
-                            contract: job_contract_type
+                            contract: job_contract_type,
+                            user_id: user_id
                         });
 
                         document.save(function (err) {
                             if (err) {
-                                console.log("erreur " + err)
+                                console.log("error saving jobOffer " + err)
                             } else {
                                 console.log("Potential job offer saved")
-                                sendNotification(link, job_title)
+                        
+                                const document = new Notification({
+                                    url: link,
+                                    title: job_title,
+                                    user: user_id
+                                });
+                                document.save(function (err) {
+                                    if (err) {
+                                        console.log("error saving notification "+err)
+                                    };
+                                    console.log("Notification added")
+                                });
+
                                 console.log("Resolving " + document);
-                            resolve(document);
+                                resolve(document);
                             }
                         });
                     } else {
@@ -111,44 +128,47 @@ async function jobScraper() {
     const promises = [];
     let job_links_array = [];
     let job_pics_array = [];
+    let user_id = [];
 
     const allObjects = await Link.find({})
-    
+
     if (allObjects.length == 0) {
         console.log("Link Collection is empty")
-        return 
+        return
     }
 
     allObjects.forEach(linkDoc => {
 
         job_links_array.push(linkDoc.title)
         job_pics_array.push(linkDoc.image)
+        user_id.push(linkDoc.user_id)
 
-        Link.findOneAndDelete({"_id": linkDoc.id}, function (error, docs) { 
-            if (error){ 
+        Link.findOneAndDelete({
+            "_id": linkDoc.id
+        }, function (error, docs) {
+            if (error) {
                 console.log(error);
-            } 
-            else{
-                console.log("deleted object") 
+            } else {
+                console.log("deleted object")
                 console.log(docs);
-            } 
-        }); 
+            }
+        });
     });
-    
+
     console.log(job_links_array)
 
     if (job_links_array.length != 0) {
         for (let i = 0; i < job_links_array.length; ++i) {
-            promises.push(scrape(job_links_array[i], job_pics_array[i]));
+            promises.push(scrape(job_links_array[i], job_pics_array[i], user_id[i]));
         }
 
         Promise.all(promises)
-        .then((results) => {
-            console.log("All done", results);
-        })
-        .catch((error) => {
-            console.log(error)
-        });
+            .then((results) => {
+                console.log("All done", results);
+            })
+            .catch((error) => {
+                console.log(error)
+            });
     }
 }
 

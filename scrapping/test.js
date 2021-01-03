@@ -6,98 +6,106 @@ const primarySearchLink = require("../models/PrimaryResearch")
 
 puppeteerExtra.use(pluginStealth());
 
-function scrape(link, keywords, user_id) {
-    return new Promise((resolve) => {
+function run (link) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const browser = await puppeteerExtra.launch({
+                args: ['--no-sandbox']
+            })
+            const page = await browser.newPage();
+            await page.goto(link.title, {
+                waitUntil: 'load',
+                timeout: 0
+            });
+            let urls = await page.evaluate((html) => {
 
-        setTimeout(() => {
-            puppeteerExtra
-                .launch({
-                    args: ['--no-sandbox']
-                })
-                .then(function (browser) {
-                    return browser.newPage();
+                let documents = [];
 
-                })
-                .then(function (page) {
+                $(".job-listing > .job-listing-details > .job-listing-description > h3 > a", html).each(function () {
+    
+                    let url = $(this).attr('href');
+                    let image_src = $(this).parent().parent().prev().find("img").attr('src');
 
-                    return page.goto(link, {waitUntil: 'load', timeout: 0}).then(function () {
-                        return page.content();
+                    const new_link = new Link({
+                        title: url,
+                        image: image_src,
+                        keywords: keywords,
+                        user_id: user_id
                     });
 
-                })
-                .then(function (html) {
-                    $(".job-listing > .job-listing-details > .job-listing-description > h3 > a", html).each(function () {
-
-                        let result = $(this).attr('href');
-                        let image_src = $(this).parent().parent().prev().find("img").attr('src');
-            
-                        const document = new Link({
-                            title: result,
-                            image : image_src,
-                            keywords : keywords,
-                            user_id: user_id
-                        });
-            
-                        document.save(function (err) {
-                            if (err) {
-                                console.log("erreur " + err)
-                            } else {
-                                console.log("Un nouveau lien est ajouté")
-                                resolve(document)
-                            }
-                        });
-                        
+                    document.save(function (err) {
+                        if (err) {
+                            console.log("erreur " + err)
+                        } else {
+                            console.log("Un nouveau lien est ajouté")
+                            resolve(document)
+                        }
                     });
-                })
-        });
 
-    }, Math.floor(Math.random() * 1000));
+                    documents.push(new_link)
+
+                });
+
+                return documents;
+            })
+            browser.close();
+            return resolve(urls);
+        } catch (e) {
+            return reject(e);
+        }
+    })
 }
+
+
+// run().then(console.log).catch(console.error);
 
 async function linkScraper() {
 
     const promises = [];
     let job_links_array = [];
-    let job_keyword_array = [];
-    let users_id = []
 
-    const allObjects = await primarySearchLink.find({})
-    
+    const allObjects = await primarySearchLink.find()
+
     if (allObjects.length == 0) {
-        return 
+        console.log("primarySearch Collection is empty")
+        return
     }
 
     allObjects.forEach(linkDoc => {
 
-        job_links_array.push(linkDoc.link)
-        job_keyword_array.push(linkDoc.keywords)
-        users_id.push(linkDoc.user_id)
+        linkDoc.links.forEach(url => {
+            job_links_array.push({
+                "user_id": linkDoc.user_id,
+                "keywords": linkDoc.keywords,
+                "title": url
+            })
+        });
 
-        Link.findOneAndDelete({"_id": linkDoc.id}, function (error, docs) { 
-            if (error){ 
+        primarySearchLink.findOneAndDelete({
+            "_id": linkDoc.id
+        }, function (error, docs) {
+            if (error) {
                 console.log(error);
-            } 
-            else{
-                console.log("deleted object") 
+            } else {
+                console.log(" --link-- from primaryResearch Collection is deleted ")
                 console.log(docs);
-            } 
-        }); 
+            }
+        });
+
     });
-    
-    console.log(job_keyword_array)
 
     if (job_links_array.length != 0) {
         for (let i = 0; i < job_links_array.length; ++i) {
-            promises.push(scrape(job_links_array[i], job_keyword_array[i],users_id[i]));
+            promises.push(run(job_links_array[i]));
         }
 
         Promise.all(promises)
-        .then((results) => {
-            console.log("All done", results);
-        })
-        .catch((error) => {
-            console.log(error)
-        });
+            .then((results) => {
+                console.log("All done", results);
+            })
+            .catch((error) => {
+                console.log(error)
+            });
     }
 }
 

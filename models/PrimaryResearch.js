@@ -4,12 +4,12 @@ const PrimaryResearch = mongoose.model(
     'PrimaryResearch',
     new mongoose.Schema({
 
-        link: {
+        links: [{
             type: String,
             required: true,
             min: 6,
             max: 1024,
-        },
+        }],
         keywords: [{
             type: String,
             required: true,
