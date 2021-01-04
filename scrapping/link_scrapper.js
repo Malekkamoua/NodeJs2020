@@ -20,42 +20,40 @@ function run(obj) {
                 timeout: 0
             });
 
-            let urls = await page.evaluate(() => {
 
-                let documents = [];
-                let html = document.body.innerHTML;
+            let documents = [];
+            let html = await page.evaluate(() => document.body.innerHTML);
 
-                $(".job-listing > .job-listing-details > .job-listing-description > h3 > a", html).each(function () {
+            $(".job-listing > .job-listing-details > .job-listing-description > h3 > a", html).each(function () {
 
-                    let url_new_link = $(this).attr('href');
-                    let image_src = $(this).parent().parent().prev().find("img").attr('src');
+                let url_new_link = $(this).attr('href');
+                let image_src = $(this).parent().parent().prev().find("img").attr('src');
 
-                    const new_link = new Link({
-                        title: url_new_link,
-                        image: image_src,
-                        keywords: obj.b,
-                        user_id: obj.c
-                    });
-
-                    new_link.save(function (err) {
-                        if (err) {
-                            console.log("erreur " + err)
-                        } else {
-                            console.log("Un nouveau lien est ajouté")
-                            resolve(document)
-                        }
-                    });
-
-                    documents.push(new_link)
-
+                const new_link = new Link({
+                    title: url_new_link,
+                    image: image_src,
+                    keywords: obj.b,
+                    user_id: obj.c
                 });
 
-                return documents;
-            })
+                new_link.save(function (err) {
+                    if (err) {
+                        console.log("erreur " + err)
+                    } else {
+                        console.log("Un nouveau lien est ajouté")
+                        resolve(new_link)
+                    }
+                });
+
+                documents.push(new_link)
+
+            });
+
 
             await page.waitFor(5000);
             await browser.close();
-            return resolve(urls);
+            console.log("scrapping ended")
+            return resolve(new_link);
 
         } catch (e) {
             return reject(e);
