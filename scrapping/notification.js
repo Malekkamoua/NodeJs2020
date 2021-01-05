@@ -14,6 +14,10 @@ async function sendNotification() {
     }
   });
 
+  if (notification_array.length == 0) {
+    console.log("Notifications array is empty")
+    return
+  }
   notification_array.forEach(notif => {
 
     let htmlText = `Check this link : <a href=\"${notif.url}\">Link</a>`;
