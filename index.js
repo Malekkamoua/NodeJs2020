@@ -12,6 +12,8 @@ const verifyToken = require("./authentication/validate-token");
 
 const startTracking = require('./scrapping/link_scrapper')
 const jobScraper =  require('./scrapping/job_scrapper')
+const sendNotification = require('./scrapping/notification')
+const CronJob = require('cron').CronJob;
 
 //connecting database
 mongoose.connect( process.env.DB_URL,{ useNewUrlParser : true, useUnifiedTopology: true, useFindAndModify: false}); 
@@ -33,21 +35,33 @@ app.use("/user",verifyToken,userRoutes);
 app.get('/', (req, res) => res.send('Hello World ! '));
 
 
-jobScraper();
-//Scraping modules
-// new Promise((resolve, reject) => {
-//     startTracking();
-//     resolve();
-// })
-// .then(() => {
-//     jobScraper();
-// })
-// .then(() => {
-//     sendNotification();
-// })
-// .catch((err) => {
-//     console.log("Error ----- "+ err)
-// });
+async function link_scrapper_job() {
+
+    let job = new CronJob('* */1 * * * *', function () {
+        startTracking();
+    }, null, true, null, null, true);
+    job.start();
+}
+
+async function job_scrapper_job() {
+
+    let job = new CronJob('* */5 * * * *', function () {
+        jobScraper();
+    }, null, true, null, null, true);
+    job.start();
+}
+
+async function notification_job() {
+
+    let job = new CronJob('* */10 * * * *', function () {
+        sendNotification();
+    }, null, true, null, null, true);
+    job.start();
+}
+
+link_scrapper_job();
+job_scrapper_job();
+notification_job();
 
 const server = app.listen(process.env.PORT, () => console.log(`App listening at http://localhost:${process.env.PORT}`));
 server.timeout = 100000;

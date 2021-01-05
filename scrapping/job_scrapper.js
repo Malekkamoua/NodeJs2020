@@ -95,7 +95,7 @@ function scrape(link) {
                         const email = new Notification({
                             url: link.url,
                             title: job_title,
-                            user: link.user_id
+                            user_id: link.user_id
                         });
                         email.save(function (err) {
                             if (err) {
@@ -131,6 +131,7 @@ function scrape(link) {
 async function jobScraper() {
 
     const promises = [];
+    const myEmitter = new EventEmitter();
 
     let link;
     let links_array = []
@@ -142,10 +143,16 @@ async function jobScraper() {
         return
     }
 
-    const myEmitter = new EventEmitter();
 
     //adding links as much as event listeners so code wont crash
-    for (let i = 0; i < myEmitter.getMaxListeners(); i++) {
+
+    if (allObjects.length > 10) {
+        counter =  myEmitter.getMaxListeners()
+    }else{
+        counter = allObjects.length;
+    }
+   
+    for (let i = 0; i < counter; i++) {
 
         link = {
             "url": allObjects[i].title,
@@ -155,16 +162,16 @@ async function jobScraper() {
         }
         links_array.push(link)
 
-        // Link.findOneAndDelete({
-        //     "_id": allObjects[i].id
-        // }, function (error, docs) {
-        //     if (error) {
-        //         console.log(error);
-        //     } else {
-        //         console.log("deleted object")
-        //         console.log(docs);
-        //     }
-        // });
+        Link.findOneAndDelete({
+            "_id": allObjects[i].id
+        }, function (error, docs) {
+            if (error) {
+                console.log(error);
+            } else {
+                console.log("--link-- from Link Collection is deleted ")
+                console.log(docs);
+            }
+        });
         
     }
     

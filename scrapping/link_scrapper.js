@@ -44,8 +44,12 @@ function scrape(primary_link) {
                         resolve(new_link)
                     }
                 });
-
-                documents.push(new_link)
+                if (new_link == undefined ) {
+                    console.log("page scrapping ended")
+                    return resolve("done");
+                }else{
+                    documents.push(new_link)
+                }
 
             });
 
@@ -54,7 +58,7 @@ function scrape(primary_link) {
             await browser.close();
 
             console.log("page scrapping ended")
-            return resolve(new_link);
+            return resolve("done");
 
         } catch (e) {
             return reject(e);
@@ -94,16 +98,16 @@ async function linkScraper() {
         });
 
 
-        // primarySearchLink.findOneAndDelete({
-        //     "_id": linkDoc.id
-        // }, function (error, docs) {
-        //     if (error) {
-        //         console.log(error);
-        //     } else {
-        //         console.log(" --link-- from primaryResearch Collection is deleted ")
-        //         console.log(docs);
-        //     }
-        // });
+        primarySearchLink.findOneAndDelete({
+            "_id": linkDoc.id
+        }, function (error, docs) {
+            if (error) {
+                console.log(error);
+            } else {
+                console.log(" --link-- from primaryResearch Collection is deleted ")
+                console.log(docs);
+            }
+        });
 
     });
 

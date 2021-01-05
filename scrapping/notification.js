@@ -9,8 +9,8 @@ async function sendNotification() {
   let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: 'malekkamoua50@gmail.com',
-      pass: '14112014Malek'
+      user: process.env.EMAIL,
+      pass: process.env.PASSWORD
     }
   });
 
@@ -18,24 +18,40 @@ async function sendNotification() {
 
     let htmlText = `Check this link : <a href=\"${notif.url}\">Link</a>`;
     let textToSend = `${notif.title} might interest you. `;
-    const user =  model.find({_id: notif.user})
 
-    try {
-      let info = await transporter.sendMail({
-        from: 'malekkamoua50@gmail.com',
-        to: user.email,
-        subject: jobTitle,
-        text: textToSend,
-        html: htmlText
-      });
+    User.findById(notif.user_id, function (err, user) {
+      if (err) {
+        console.log(err);
+      } else {
 
-      console.log("Message sent: %s", info.messageId);
+        try {
+          let info = transporter.sendMail({
+            from: process.env.EMAIL,
+            to: user.email,
+            subject: notif.title,
+            text: textToSend,
+            html: htmlText
+          });
 
-    } catch (error) {
-      console.log(error);
-    }
+          console.log("Message sent to " + user.email);
+
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    });
+
+    Notification.findOneAndDelete({
+      "_id": notif.id
+    }, function (error, docs) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("notification deleted")
+        console.log(docs);
+      }
+    });
   });
-
 }
 
 module.exports = sendNotification;

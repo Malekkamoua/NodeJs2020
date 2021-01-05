@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
 const Notification = mongoose.model(
-    
+
     'Notification',
-     new mongoose.Schema({ 
+    new mongoose.Schema({
 
         url: {
             type: String,
@@ -12,19 +12,18 @@ const Notification = mongoose.model(
             min: 6,
             max: 1024,
         },
-        title:{
+        title: {
             type: String,
             required: false,
             default: "none",
             min: 6,
             max: 1024,
         },
-        user: [
-            {
+        user_id: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
-            }
-        ]
+        }
+
 
     }));
 
