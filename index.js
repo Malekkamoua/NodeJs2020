@@ -43,19 +43,19 @@ app.use("/user", verifyToken, userRoutes);
 
 app.get('/', (req, res) => res.send('Hello World ! '));
 
-cron.schedule("*/30 * * * * *", function () {
+cron.schedule("*/10 * * * * *", function () {
     startTracking();
-    console.log("running startTracking() every 30 seconds");
+    console.log("running startTracking() every 10 seconds");
 });
 
-cron.schedule("*/50 * * * * *", function () {
+cron.schedule("*/5 * * * * *", function () {
     jobScraper();
-    console.log("running jobScrapper() 50 seconds");
+    console.log("running jobScrapper() every 50 seconds");
 });
 
-cron.schedule("*/5 * * * *", function () {
+cron.schedule("*/20 * * * *", function () {
     sendNotification();
-    console.log("running sendNotification() at 15:50");
+    console.log("running sendNotification() every 5 minutes");
 });
 
 

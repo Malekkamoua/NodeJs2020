@@ -57,6 +57,10 @@ const JobOffer = mongoose.model(
             required: true,
             default:"unchanged"
         },
+        has_keywords: {
+            type: Boolean,
+            required: true
+        },
         user_id: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
