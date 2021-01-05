@@ -1,10 +1,8 @@
 const puppeteerExtra = require('puppeteer-extra');
 const pluginStealth = require('puppeteer-extra-plugin-stealth');
 const $ = require('cheerio');
-const Link = require('../models/Link');
-const JobOffer= require('../models/JobOffer')
-const Notification = require('../models/Notification')
-const EventEmitter = require('events');
+var Link = require('../models/Link');
+const primarySearchLink = require("../models/PrimaryResearch")
 
 puppeteerExtra.use(pluginStealth());
 
@@ -17,10 +15,11 @@ function scrape(link) {
                 args: ['--no-sandbox']
             })
             const page = await browser.newPage();
-            await page.goto(link.url, {
+            await page.goto(link.title, {
                 waitUntil: 'load',
                 timeout: 0
             });
+
 
             let documents = [];
 
@@ -74,16 +73,15 @@ function scrape(link) {
                 });
 
                 const job = new JobOffer({
-                    job_link: link.url,
+                    job_link: link,
                     title: job_title,
-                    image: link.image,
-                    keywords: link.keywords,
+                    image: image,
                     description: job_description,
                     entreprise_email: job_email,
                     salaire: job_salary,
                     emplacement: job_location,
                     contract: job_contract_type,
-                    user_id: link.user_id
+                    user_id: user_id
                 });
 
                 job.save(function (err) {
@@ -93,9 +91,9 @@ function scrape(link) {
                         console.log("Potential job offer saved")
 
                         const email = new Notification({
-                            url: link.url,
+                            url: link,
                             title: job_title,
-                            user: link.user_id
+                            user: user_id
                         });
                         email.save(function (err) {
                             if (err) {
@@ -119,7 +117,7 @@ function scrape(link) {
             await browser.close();
 
             console.log("job page scrapping ended")
-            return resolve(documents);
+            return resolve(job);
 
         } catch (e) {
             return reject(e);
@@ -128,51 +126,54 @@ function scrape(link) {
 }
 
 
-async function jobScraper() {
+async function linkScraper() {
 
     const promises = [];
+    let job_links_array = [];
+    let primary_link;
 
-    let link;
-    let links_array = []
+    let final = [];
 
-    const allObjects = await Link.find({})
+    const allObjects = await primarySearchLink.find()
 
     if (allObjects.length == 0) {
-        console.log("Link Collection is empty")
+        console.log("primarySearch Collection is empty")
         return
     }
 
-    const myEmitter = new EventEmitter();
+    allObjects.forEach(linkDoc => {
 
-    //adding links as much as event listeners so code wont crash
-    for (let i = 0; i < myEmitter.getMaxListeners(); i++) {
+        linkDoc.links.forEach(x => {
+            job_links_array.push(x)
+        });
 
-        link = {
-            "url": allObjects[i].title,
-            "image": allObjects[i].image,
-            "keywords": allObjects[i].keywords,
-            "user_id": allObjects[i].user_id
-        }
-        links_array.push(link)
+        job_links_array.forEach(element => {
+            primary_link = {
+                'title': element,
+                'keywords': linkDoc.keywords,
+                'user_id': linkDoc.user_id
+            }
+            final.push(primary_link)
+        });
 
-        // Link.findOneAndDelete({
-        //     "_id": allObjects[i].id
+
+        // primarySearchLink.findOneAndDelete({
+        //     "_id": linkDoc.id
         // }, function (error, docs) {
         //     if (error) {
         //         console.log(error);
         //     } else {
-        //         console.log("deleted object")
+        //         console.log(" --link-- from primaryResearch Collection is deleted ")
         //         console.log(docs);
         //     }
         // });
-        
-    }
-    
-    links_array.forEach(link => {
-        promises.push(scrape(link))
+
     });
 
-  
+    final.forEach(primary_link => {
+        promises.push(scrape(primary_link))
+    });
+
     Promise.all(promises)
         .then((results) => {
             console.log("All done", results);
@@ -183,5 +184,4 @@ async function jobScraper() {
 }
 
 
-
-module.exports = jobScraper;
+module.exports = linkScraper;

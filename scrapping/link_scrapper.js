@@ -6,7 +6,7 @@ const primarySearchLink = require("../models/PrimaryResearch")
 
 puppeteerExtra.use(pluginStealth());
 
-function run(obj) {
+function scrape(primary_link) {
 
     return new Promise(async (resolve, reject) => {
         try {
@@ -15,7 +15,7 @@ function run(obj) {
                 args: ['--no-sandbox']
             })
             const page = await browser.newPage();
-            await page.goto(obj.a, {
+            await page.goto(primary_link.title, {
                 waitUntil: 'load',
                 timeout: 0
             });
@@ -32,8 +32,8 @@ function run(obj) {
                 const new_link = new Link({
                     title: url_new_link,
                     image: image_src,
-                    keywords: obj.b,
-                    user_id: obj.c
+                    keywords: primary_link.keywords,
+                    user_id: primary_link.user_id
                 });
 
                 new_link.save(function (err) {
@@ -52,7 +52,8 @@ function run(obj) {
 
             await page.waitFor(5000);
             await browser.close();
-            console.log("scrapping ended")
+
+            console.log("page scrapping ended")
             return resolve(new_link);
 
         } catch (e) {
@@ -66,7 +67,7 @@ async function linkScraper() {
 
     const promises = [];
     let job_links_array = [];
-    let obj;
+    let primary_link;
 
     let final = [];
 
@@ -84,12 +85,12 @@ async function linkScraper() {
         });
 
         job_links_array.forEach(element => {
-            obj = {
-                'a': element,
-                'b': linkDoc.keywords,
-                'c': linkDoc.user_id
+            primary_link = {
+                'title': element,
+                'keywords': linkDoc.keywords,
+                'user_id': linkDoc.user_id
             }
-            final.push(obj)
+            final.push(primary_link)
         });
 
 
@@ -106,8 +107,8 @@ async function linkScraper() {
 
     });
 
-    final.forEach(y => {
-        promises.push(run(y))
+    final.forEach(primary_link => {
+        promises.push(scrape(primary_link))
     });
 
     Promise.all(promises)

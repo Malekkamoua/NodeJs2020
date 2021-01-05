@@ -33,7 +33,7 @@ app.use("/user",verifyToken,userRoutes);
 app.get('/', (req, res) => res.send('Hello World ! '));
 
 
-startTracking();
+jobScraper();
 //Scraping modules
 // new Promise((resolve, reject) => {
 //     startTracking();
