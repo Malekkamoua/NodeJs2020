@@ -2,6 +2,7 @@ const router = require("express").Router()
 const jwt = require("jsonwebtoken")
 const multer = require('multer')
 const path = require('path');
+const EventEmitter = require('events');
 
 const User = require("../models/User")
 const primaryResearch = require("../models/PrimaryResearch");
@@ -59,10 +60,15 @@ router.post('/search', (req, res) => {
 
     let token = req.header('auth-token');
     const payload = jwt.verify(token, process.env.TOKEN_SECRET);
+    const myEmitter = new EventEmitter();
 
     let req_words = req.body.link.split(" ");
     let req_keywords = req.body.keywords.split(" ");
     let pages = parseInt(req.body.pages) + 1;
+
+    if (pages > myEmitter.getMaxListeners()) {
+        pages = myEmitter.getMaxListeners()
+    }
 
     let words_concat = req_words.join("+")
 

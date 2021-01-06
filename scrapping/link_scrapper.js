@@ -44,10 +44,10 @@ function scrape(primary_link) {
                         resolve(new_link)
                     }
                 });
-                if (new_link == undefined ) {
+                if (new_link == undefined) {
                     console.log("page scrapping ended")
                     return resolve("done");
-                }else{
+                } else {
                     documents.push(new_link)
                 }
 
@@ -75,40 +75,37 @@ async function linkScraper() {
 
     let final = [];
 
-    const allObjects = await primarySearchLink.find()
+    const obj = await primarySearchLink.findOne()
 
-    if (allObjects.length == 0) {
+    if (obj == undefined) {
         console.log("primarySearch Collection is empty")
         return
     }
 
-    allObjects.forEach(linkDoc => {
+    obj.links.forEach(linkDoc => {
 
-        linkDoc.links.forEach(x => {
-            job_links_array.push(x)
-        });
+        job_links_array.push(linkDoc)
+    });
 
-        job_links_array.forEach(element => {
-            primary_link = {
-                'title': element,
-                'keywords': linkDoc.keywords,
-                'user_id': linkDoc.user_id
-            }
-            final.push(primary_link)
-        });
+    job_links_array.forEach(element => {
+        primary_link = {
+            'title': element,
+            'keywords': obj.keywords,
+            'user_id': obj.user_id
+        }
+        final.push(primary_link)
+    });
 
 
-        primarySearchLink.findOneAndDelete({
-            "_id": linkDoc.id
-        }, function (error, docs) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log(" --link-- from primaryResearch Collection is deleted ")
-                console.log(docs);
-            }
-        });
-
+    primarySearchLink.findOneAndDelete({
+        "_id": obj.id
+    }, function (error, docs) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log(" --link-- from primaryResearch Collection is deleted ")
+            console.log(docs);
+        }
     });
 
     final.forEach(primary_link => {

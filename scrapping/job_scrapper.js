@@ -5,6 +5,7 @@ const Link = require('../models/Link');
 const JobOffer= require('../models/JobOffer')
 const Notification = require('../models/Notification')
 const EventEmitter = require('events');
+const { exists } = require('../models/Link');
 
 puppeteerExtra.use(pluginStealth());
 
@@ -31,6 +32,7 @@ function scrape(link) {
             let job_location
             let job_email
 
+            
             let html = await page.evaluate(() => document.body.innerHTML);
 
             $(".user-html", html).each(function () {
@@ -73,19 +75,46 @@ function scrape(link) {
                     console.log("job_location " + job_location);
                 });
 
-                const job = new JobOffer({
-                    job_link: link.url,
-                    title: job_title,
-                    image: link.image,
-                    keywords: link.keywords,
-                    description: job_description,
-                    entreprise_email: job_email,
-                    salaire: job_salary,
-                    emplacement: job_location,
-                    contract: job_contract_type,
-                    user_id: link.user_id
+                let job;
+                let exists = 0;
+
+                link.keywords.forEach(keyword => {
+                    if (job_description.indexOf(keyword) != -1) {
+                        exists++
+                    }
                 });
 
+                if (exists != 0) {
+                    job = new JobOffer({
+                        job_link: link.url,
+                        title: job_title,
+                        image: link.image,
+                        keywords: link.keywords,
+                        description: job_description,
+                        entreprise_email: job_email,
+                        salaire: job_salary,
+                        emplacement: job_location,
+                        contract: job_contract_type,
+                        has_keywords: true,
+                        user_id: link.user_id
+                    });
+                }else{
+                    job = new JobOffer({
+                        job_link: link.url,
+                        title: job_title,
+                        image: link.image,
+                        keywords: link.keywords,
+                        description: job_description,
+                        entreprise_email: job_email,
+                        salaire: job_salary,
+                        emplacement: job_location,
+                        contract: job_contract_type,
+                        has_keywords: false,
+                        user_id: link.user_id
+                    });
+                }
+               
+            
                 job.save(function (err) {
                     if (err) {
                         console.log("error saving jobOffer " + err)
