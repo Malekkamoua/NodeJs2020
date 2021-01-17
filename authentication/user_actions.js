@@ -93,20 +93,4 @@ router.post('/search', (req, res) => {
     res.send(`document added to collection`)
 });
 
-//Getting all user potential jobs
-router.get('/jobs', async (req, res) => {
-
-    let token = req.header('auth-token');
-    const payload = jwt.verify(token, process.env.TOKEN_SECRET);
-
-    try {
-        const allObjects = await JobOffer.find({user: payload.id})
-        res.json(allObjects);
-
-    } catch (error) {
-        res.status(500).json({message : error.message});
-    }
-
-});
-
 module.exports = router
